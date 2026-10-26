@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "InkGuard"
+description = "An AI-powered brand-governance workspace that reviews drafts against approved brand guidelines and facts, explains potential issues, and keeps publishing decisions in human hands."
+version = "1.0.0"
+id = "artifacts/inkguard"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25874
+
+[services.development]
+run = "pnpm --filter @workspace/inkguard run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/inkguard", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/inkguard/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25874"
+BASE_PATH = "/"
