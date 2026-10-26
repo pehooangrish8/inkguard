@@ -70,6 +70,7 @@ web_modules/
 .env.*
 !.env.example
 
+
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 .parcel-cache
@@ -148,12 +149,14 @@ vite.config.ts.timestamp-*
 # Turbo Repo
 .turbo
 
-
-# Python virtual environment
-venv/
-
-# Python cache
+# Python backend
 __pycache__/
 *.py[cod]
 
+# Python virtual environments
+.venv/
+venv/
+
+# Local databases
+*.db
 inkguard.db
