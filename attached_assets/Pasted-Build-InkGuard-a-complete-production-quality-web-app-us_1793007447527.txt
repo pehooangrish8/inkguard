@@ -1,0 +1,81 @@
+Build **InkGuard**, a complete, production-quality web app, using React + TypeScript + Tailwind CSS (Vite). It must look like a polished, professionally designed product made by a design studio. It must NOT look like a generic AI-generated or Replit-generated template.
+
+## 1. What InkGuard is
+An AI-powered brand-governance platform that reviews content BEFORE publication against approved brand guidelines and approved facts. It detects tone, terminology, factual, unsupported-claim, visual and accessibility issues; explains each finding; cites the rule involved; and suggests a correction that preserves the author's intent. It never overrides a human: people always decide. Frontend only. A FastAPI backend is being built separately by a teammate.
+
+## 2. API contract (DO NOT change; ask me before proposing any change)
+`POST {VITE_API_BASE_URL}/analyze` (default `http://localhost:8000`)
+Request:
+```json
+{ "brand_name": "Acme", "content": "Our product is the best in the universe!",
+  "brand_guidelines": ["Use a professional tone"], "approved_facts": ["The product launched in 2025"] }
+```
+Current temporary response (not the final AI result):
+```json
+{ "status": "analysis_not_configured", "findings": [], "message": "AI analysis is not connected yet." }
+```
+The finding shape is not final. Define it once in `src/types.ts`; only `issue` is required, everything else optional, and render defensively so missing fields never crash the UI:
+`id, issue, severity (low|medium|high|critical), evidence, brand_rule, explanation, suggested_correction, confidence (0 to 1), category`.
+Put all API code in `src/api/client.ts` (fetch + AbortController, 60s timeout, typed errors that separate network / server / invalid-JSON). Never hardcode secrets or API keys; provide `.env.example`; add `.env` to `.gitignore`.
+
+## 3. Design direction (follow exactly)
+**Dark theme only.** No light mode, no toggle. Set `class="dark"`, `color-scheme: dark`, and html/body/#root background so there is never a white flash or white area.
+Palette (define as Tailwind tokens `ink.950`, `ink.900`, `ink.700`, `cream`):
+- `#010736` page background
+- `#0D1C42` cards, sidebar, navbar, inputs, modals, dropdowns, chat panel
+- `#22396F` borders, dividers, hover fills, secondary buttons
+- `#FCF1D0` cream: primary buttons, active nav, links, focus ring, highlights
+- Text: cream at 90% (primary) and 60% (muted). Text on cream buttons: `#010736`.
+- Severity (muted for dark): critical `#F87171`, high `#FB923C`, medium `#FBBF24`, low `#7DD3FC`, success `#6EE7B7`. Always icon + text, never colour alone.
+
+**Style: normal, familiar, clean** (think Linear, Stripe or Vercel dashboards). Solid cards with a 1px `#22396F` border, `rounded-lg` for buttons, inputs and badges, `rounded-xl` for cards. No glows, no gradients, no glassmorphism or backdrop blur, no noise or grid textures, no cards that lift or scale on hover, no parallax, no scroll-triggered entrance animations, no animated counters.
+**Typography:** Inter (400/500/600) for everything, JetBrains Mono only for evidence and code snippets. Sentence case. No ALL-CAPS labels, no tiny eyebrow labels above headings, no accenting a single word in a headline. Page title 24px, section title 18px, body 14 to 16px, line length under 80 characters.
+**Motion:** only 150 to 200ms colour and border transitions, plain spinners, plain skeletons, simple toasts. Respect `prefers-reduced-motion`. The only decorative motion in the whole app is the Inky mascot.
+
+**The one memorable, unique element:** the **"marked-up draft"**. After a review, the user's draft is shown as a proof sheet with each flagged phrase highlighted and tagged with a small numbered superscript marker. The same number appears on its finding card, and hovering or clicking a marker scrolls to and briefly outlines the matching card (and vice versa). Everything else stays quiet and disciplined so this stands out.
+
+Make it NOT look Replit-made: custom title "InkGuard | Brand review before you publish", custom inline-SVG favicon, `theme-color` `#010736`, no default Vite/React template content, no "Hello world" leftovers, no default logos, a proper 404 page, real meaningful copy everywhere (no lorem ipsum), consistent spacing on a 4/8px scale, responsive down to 360px, visible keyboard focus, WCAG AA contrast. Configure Vite with `server.host = "0.0.0.0"`, `allowedHosts: true` and port 5000 so it runs in the Replit preview.
+
+## 4. Pages and routes (react-router)
+**`/` Landing page**
+- Plain top navbar (logo, Features, How it works, Trust, "Open workspace" cream button).
+- Hero: headline "Clear copy. Confident publishing.", one short paragraph, two buttons ("Open workspace", "Try a sample draft"), and beside it a static, realistic preview of the marked-up draft with a finding card (no tilt, no floating).
+- How it works: 4 steps (this is a real sequence, so numbering is fine): add guidelines and facts, paste a draft, review explained findings, a human approves.
+- Features: 6 icon cards (tone and terminology, fact checking against approved sources, unsupported claims, accessibility, explainable findings with rule cited, human-in-control approvals).
+- Trust and transparency: AI use disclosure, confidential material handling, "Nothing changes without your approval".
+- Footer.
+
+**`/app/*` App shell:** fixed left sidebar (about 240px, collapses to a drawer on mobile) with icon + label nav: Review, Queue, Brand Kit, Insights, Activity, Settings. Top bar: page title, Demo mode toggle, backend status dot (connected / not configured / unreachable), role switcher (Creator / Manager / Reviewer, labelled "Role simulation, not real authentication"; Creator can submit for review, Manager/Reviewer can approve or request changes), avatar menu.
+
+1. **Review** (fully polished, uses the REAL `/analyze`). Left: form with Brand name (required), Draft (required, character + word count), Brand guidelines and Approved facts as editable lists (add with Enter, multi-line paste splits into items, remove each). Buttons: Review content, Load sample, Clear. Gentle warning when guidelines or facts are empty. Inline validation. Right: results panel.
+   - States: idle (inviting empty state), loading (skeleton cards + locked form), success with findings, success with zero findings and status "ok" ("No issues found, human review still recommended"), **`analysis_not_configured` = calm info card, NOT an error, and never "No issues found"** ("AI analysis is not connected yet. Your draft was not reviewed."), error (red card, human-readable message, HTTP status, Retry; separate "could not reach backend" from "backend returned an error").
+   - Results: stat row (counts per severity), the marked-up draft, filter and sort by severity, progress "X of N reviewed", then finding cards: severity badge, category, confidence, evidence (mono block), rule cited, explanation, before/after diff of the suggestion.
+   - Human controls per finding: **Accept suggestion, Edit (inline), Reject (optional reason), Undo**, keyboard shortcuts A / E / R. Accepted suggestions are applied to a **Revised draft** panel with Copy and a diff toggle. Plus "Submit for review", "Approve for publish" and "Request changes", enabled by role.
+2. **Queue**: board or table (Draft, In review, Changes requested, Approved) with comments thread and revision history per item. Clearly chipped "Sample data".
+3. **Brand Kit**: tabs for Guidelines, Approved facts, Terminology (preferred vs avoided), Assets. Add, edit, delete, paste-import, and "Use in review" which pushes chosen items into the Review form. Persist in localStorage with the note "Stored in this browser only".
+4. **Insights**: recharts, themed in `#22396F`, cream and `#7DD3FC` tints on dark cards: findings over time, top recurring categories, most-triggered guidelines, "Guidelines that may be unclear" (often rejected). Chipped "Sample data" with a note that real insights will come from the backend audit trail later.
+5. **Activity**: timeline of the local session log, noted "Local only until the backend audit trail exists".
+6. **Settings**: backend URL (read-only from env), AI and privacy disclosure, Demo mode, "Clear local data".
+
+## 5. Honesty rules (strict)
+- Only `/analyze` is a real backend call. Decisions, approvals, roles, queue, insights, activity and Brand Kit persistence are UI-only or sample data. Label them with small neutral badges ("Local only, not saved", "Sample data", "Role simulation", "Demo mode"). Never present fake data as real results.
+- Review decisions live only in browser state; show a persistent notice that they are lost on refresh.
+- `saveDecision()` and `askChatbotBackend()` in `client.ts` are clearly marked "not implemented" stubs. Do NOT call any invented endpoint.
+- **Demo mode** (default OFF) returns mock findings (high: unsupported superlative claim; medium: launch year mismatch; low: casual tone) from `src/mocks/`, with a persistent amber banner "Demo mode is on. Findings are sample data."
+- Always-visible AI disclosure: "Your draft is sent to the InkGuard backend for AI analysis. Do not paste confidential material you are not authorised to share."
+
+## 6. Inky, the guide mascot
+Floating bottom-right on every screen. A flat cream ink-drop with navy eyes (inline SVG, about 60px). It is alive: slow **breathing** (scale 1 to 1.07, 4s), gentle **floating** bob, **blinking** every few seconds, an occasional small wiggle with a short tip bubble every 15 to 25 seconds. It reacts to app state: loading = looking around with a thinking bubble, success = happy, error = worried face with a short shake, not-configured = calm shrug. Everything static under `prefers-reduced-motion`.
+Clicking opens a chat panel (`#0D1C42`, 1px `#22396F`, rounded-xl; bot bubbles `#22396F`, user bubbles cream with navy text; Esc closes; proper focus and aria labels; typing indicator; quick-reply chips). Header label: "Guide bot, rule-based, not AI. Nothing you type is sent anywhere." It answers from a local FAQ by keyword (what InkGuard does, filling the form, severity levels, what "analysis not configured" means, Accept vs Edit vs Reject, why decisions are local only, Demo mode, privacy), is aware of the current state (offers "Why no findings?" or "How do I retry?" chips), and can explain the first or selected finding from app state using templates. Fallback reply suggests the chips.
+
+## 7. Code quality
+- TypeScript strict, no `any`. Simple, readable code for a student team: function declarations, plain `for` loops where clearer, short comments.
+- Structure: `src/pages`, `src/components` (Button, Card, Badge, Input, Modal, Toast, FindingCard, MarkedDraft, ListInput, Inky, ChatPanel), `src/layouts`, `src/api`, `src/mocks`, `src/data` (sample queue and insights), `src/chatbot`, `src/types.ts`.
+- Centralise tokens in `tailwind.config`.
+
+## 8. Build order (finish and verify each step before the next)
+1. Theme, layout shell and routing. 2. Review page with the real `/analyze`, all states, findings, human controls, marked-up draft, Demo mode. 3. Inky. 4. Landing page. 5. Queue, Brand Kit, Insights, Activity, Settings. 
+After each step, check there are no white or light surfaces and no console errors.
+
+## 9. Final checks and delivery
+Test every route and every state (idle, loading, success, not-configured, error, demo mode) at desktop and 360px. Make sure the build passes. Write a README with setup steps, env vars, the CORS note (the backend must allow the frontend origin), the real vs local feature table, and "Proposed contract changes" (decisions/audit endpoint, optional chat endpoint). Finish by printing the list of all files created or changed. Do not commit secrets.
