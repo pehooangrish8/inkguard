@@ -27,10 +27,3 @@ export const emptySession: ReviewSession = {
   decisions: {},
   analysisStatus: 'idle',
 };
-
-export const queueSamples = [
-  { id: 'IG-2048', title: 'A steadier way to plan your next issue', owner: 'Maya Chen', date: 'Today, 10:42 AM', status: 'In review', note: 'Please check the launch timing claim.' },
-  { id: 'IG-2047', title: 'Meet the new editorial calendar', owner: 'Leo Park', date: 'Today, 9:18 AM', status: 'Draft', note: 'Updated the feature description.' },
-  { id: 'IG-2043', title: 'A note from our founder', owner: 'Maya Chen', date: 'Yesterday', status: 'Approved', note: 'Approved after copy edits.' },
-  { id: 'IG-2039', title: 'Spring studio letter', owner: 'Ari Ellis', date: 'Jun 12', status: 'Changes requested', note: 'Needs a confirmed audience figure.' },
-];

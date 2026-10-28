@@ -1,6 +1,7 @@
-google-genai
 python-dotenv
 fastapi
 uvicorn[standard]
 sqlmodel
 pydantic
+python-multipart
+pypdf
