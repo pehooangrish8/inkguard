@@ -48,6 +48,7 @@ This table describes capabilities implemented in this codebase. It does not repl
 
 - **Frontend:** React, TypeScript, Vite, Wouter, and Lucide icons in `frontend/inkguard/artifacts/inkguard`.
 - **Backend:** Python, FastAPI, Pydantic, and SQLModel in `backend`.
+- **Deployment container:** root `Dockerfile` packages only the Python backend; its default SQLite path is `/data/inkguard.db`, suitable for a mounted persistent volume.
 - **Review engine:** deterministic Python checks are the default and require no AI account or external service. Optional OpenRouter chat completions use Python's standard HTTP client when `INKGUARD_AI_MODE=openrouter`, `OPENROUTER_API_KEY`, and `OPENROUTER_MODEL` are configured. Select a model that supports the needed text/image and JSON response features.
 - **Persistence:** SQLite stores account hashes, shared Brand Kit, extracted draft text, findings, decisions, and comments. The default file is `inkguard.db` in the working directory; set `INKGUARD_DATABASE_PATH` to an absolute path on a persistent mounted volume when hosting.
 - **Uploads:** `pypdf` extracts PDF text; DOCX paragraphs are extracted with Python's standard ZIP/XML libraries. In rules mode, image binaries are not sent to an AI service; a human reviewer must inspect images. In optional OpenRouter mode, supported images are sent as base64 data URLs. Uploaded binary files are not retained in the database.
@@ -60,7 +61,7 @@ The MVP uses one shared workspace: all signed-in accounts can see its saved revi
 
 - Publish the completed, integrated source to the team's existing GitHub repository and make the final branch judge-accessible.
 - Deploy the frontend and backend, configure the production frontend origin in `INKGUARD_CORS_ORIGINS`, and set a strong `INKGUARD_SECRET_KEY` on the backend.
-- Configure persistent storage for `inkguard.db` before using hosted accounts or saving reviews. The default SQLite file is local to the backend process and may not survive redeployments without persistent storage.
+- Mount persistent storage at `/data` on the backend service. The included container stores SQLite at `/data/inkguard.db`; set `INKGUARD_DATABASE_PATH=/data/inkguard.db` explicitly in the service variables.
 - Verify first-admin registration, login, a rules-based review without AI credentials, file uploads, comments, reviewer decisions, approval/revision, and retained data after a backend restart.
 - Add the actual deployed URL, genuine user-testing feedback (if collected), and each team member's actual contribution to the submission materials.
 - Keep secrets and local `.env`, `.venv`, `node_modules`, and database files out of Git.
