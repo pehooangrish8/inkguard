@@ -1,8 +1,15 @@
+import os
+from pathlib import Path
+
+from sqlalchemy.engine import URL
 from sqlmodel import SQLModel, Session, create_engine
 
-# SQLite stores everything in one file called inkguard.db
+database_path = Path(os.getenv("INKGUARD_DATABASE_PATH", "inkguard.db")).expanduser()
+if str(database_path) != ":memory:":
+    database_path.parent.mkdir(parents=True, exist_ok=True)
+
 engine = create_engine(
-    "sqlite:///inkguard.db",
+    URL.create("sqlite", database=str(database_path)),
     connect_args={"check_same_thread": False},
 )
 
